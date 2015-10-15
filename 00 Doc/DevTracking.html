@@ -87,6 +87,90 @@ img {
 </div>
 <div id="etl" class="section level2">
 <h2>04. ETL</h2>
+<pre class="r"><code>require(tidyr)
+require(dplyr)
+require(ggplot2)
+
+setwd(&quot;~/DataVisualization/DV_RProject3/CSVs/&quot;)
+
+files &lt;- list(&quot;ex_all&quot;, &quot;MSNCodes&quot;, &quot;pr_adjust_consum&quot;, &quot;pr_all&quot;, &quot;Prod_dataset&quot;, &quot;use_all_btu&quot;, &quot;use_all_phy&quot;)
+
+# change index number for each file
+file_path &lt;- paste(files[0], '.csv', sep='')
+
+df &lt;- read.csv(file_path, stringsAsFactors = FALSE)
+
+
+# Replace &quot;.&quot; (i.e., period) with &quot;_&quot; in the column names.
+names(df) &lt;- gsub(&quot;\\.+&quot;, &quot;_&quot;, names(df))
+
+str(df) # Uncomment this and  run just the lines to here to get column types to use for getting the list of measures.
+
+
+
+measures &lt;- c()
+
+#for (i in 1970:2013) #uncomment for prices and expenditures
+#for (i in 1960:2013) #uncomment for production_data and usage
+
+#  { measures &lt;- c(measures, paste('x',toString(i), sep = '')) }
+
+#measures &lt;- NA # uncomment for MSN_Codes
+
+
+
+# Get rid of special characters in each column.
+# Google ASCII Table to understand the following:
+for(n in names(df)) {
+  df[n] &lt;- data.frame(lapply(df[n], gsub, pattern=&quot;[^ -~]&quot;,replacement= &quot;&quot;))
+}
+
+
+dimensions &lt;- setdiff(names(df), measures)
+if( length(measures) &gt; 1 || ! is.na(dimensions)) {
+  for(d in dimensions) {
+    # Get rid of &quot; and ' in dimensions.
+    df[d] &lt;- data.frame(lapply(df[d], gsub, pattern=&quot;[\&quot;']&quot;,replacement= &quot;&quot;))
+    # Change &amp; to and in dimensions.
+    df[d] &lt;- data.frame(lapply(df[d], gsub, pattern=&quot;&amp;&quot;,replacement= &quot; and &quot;))
+    # Change : to ; in dimensions.
+    df[d] &lt;- data.frame(lapply(df[d], gsub, pattern=&quot;:&quot;,replacement= &quot;;&quot;))
+  }
+}
+
+library(lubridate)
+# Fix date columns, this needs to be done by hand because | needs to be correct.
+#                                                        \_/
+df$Order_Date &lt;- gsub(&quot; [0-9]+:.*&quot;, &quot;&quot;, gsub(&quot; UTC&quot;, &quot;&quot;, mdy(as.character(df$Order_Date), tz=&quot;UTC&quot;)))
+df$Ship_Date  &lt;- gsub(&quot; [0-9]+:.*&quot;, &quot;&quot;, gsub(&quot; UTC&quot;, &quot;&quot;, mdy(as.character(df$Ship_Date),  tz=&quot;UTC&quot;)))
+
+# The following is an example of dealing with special cases like making state abbreviations be all upper case.
+# df[&quot;State&quot;] &lt;- data.frame(lapply(df[&quot;State&quot;], toupper))
+
+# Get rid of all characters in measures except for numbers, the - sign, and period.dimensions
+if( length(measures) &gt; 1 || ! is.na(measures)) {
+  for(m in measures) {
+    df[m] &lt;- data.frame(lapply(df[m], gsub, pattern=&quot;[^--.0-9]&quot;,replacement= &quot;&quot;))
+  }
+}
+
+write.csv(df, paste(gsub(&quot;.csv&quot;, &quot;&quot;, file_path), &quot;.reformatted.csv&quot;, sep=&quot;&quot;), row.names=FALSE, na = &quot;&quot;)
+
+tableName &lt;- gsub(&quot; +&quot;, &quot;_&quot;, gsub(&quot;[^A-z, 0-9, ]&quot;, &quot;&quot;, gsub(&quot;.csv&quot;, &quot;&quot;, file_path)))
+sql &lt;- paste(&quot;CREATE TABLE&quot;, tableName, &quot;(\n-- Change table_name to the table name you want.\n&quot;)
+if( length(measures) &gt; 1 || ! is.na(dimensions)) {
+  for(d in dimensions) {
+    sql &lt;- paste(sql, paste(d, &quot;varchar2(4000),\n&quot;))
+  }
+}
+if( length(measures) &gt; 1 || ! is.na(measures)) {
+  for(m in measures) {
+    if(m != tail(measures, n=1)) sql &lt;- paste(sql, paste(m, &quot;number(38,4),\n&quot;))
+    else sql &lt;- paste(sql, paste(m, &quot;number(38,4)\n&quot;))
+  }
+}
+sql &lt;- paste(sql, &quot;);&quot;)
+cat(sql)</code></pre>
 </div>
 <div id="peculiarities" class="section level2">
 <h2>05. Peculiarities</h2>
