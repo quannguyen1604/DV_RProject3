@@ -1,42 +1,3 @@
----
-title: "DV_RProject3: Tall Glass of Oil"
-output: html_document
----
-
-![](./Graphics/Oil.jpg) 
-
-## 00. Create/Clone a github repository
-Go to SourceTree software. Create new git repository in DataVisualization folder (on same level as DrCannata folder).
-![](./Graphics/createrepo.png)
-
-If did not create the repo, clone the repo in SourceTree software.
-![](./Graphics/clonerepo.png)
-
-## 01. Create RStudio Project
-Create an RStudio project in the project folder.  
-![](./Graphics/createproject01.png)
-
-## 02. Setup RStudio 
- Create three folders in RStudio Project:  
-   **00 Doc**: where .Rmd and graphics folder lives  
-   **01 Data**: where data will be stored  
-   **02 DataWrangling**: where data is explored in ggplot  
-   **03 Visualizations**: Where visualizations are saved  
-   
-   
-![](./Graphics/fileset.png)
-
-## 03. Download .CSV Files
-
-Download csv files for energy consumption, prices, expenditures, and data codes for energy consumption in the United States. All files downloaded as .xlxs were converted into .csv files.  
-
-Downloaded from: http://www.eia.gov/tools/models/timeseries.cfm  
-
-![](./Graphics/download.png)
-
-## 04. ETL
-
-```{R eval=FALSE}
 require(tidyr)
 require(dplyr)
 require(ggplot2)
@@ -121,21 +82,3 @@ if( length(measures) > 1 || ! is.na(measures)) {
 }
 sql <- paste(sql, ");")
 cat(sql)
-```
-
-## 05. Peculiarities
-
-
-## 06. Summary and Subset
-
-
-### Summary of Dataframe
-
-### Subset of Dataframe
-
-## 07. Visualizations
-
-
-### The End
-  
-  
