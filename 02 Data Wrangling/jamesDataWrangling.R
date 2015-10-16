@@ -23,7 +23,7 @@ energyProductionDF <- rename(energyProductionDF, STATE = STATECODE)
 #need to reformate dataframes into a more usable form using the transposition function t().
 
 # first we Want to filter by state from the consumption dataset, and by MSN code for hydroelectric, nuclear, geothermal, and solar electricity generated, as well as total population. 
-altEnergyDF <- energy_usage_phyDF %>% filter (STATE %in% c("TX", "NV", "CA", "NJ"), MSN %in% c("HYEGP", "NUEGP", "GEEGP", "SOEGP","TPOPP")) %>% arrange(STATE)
+altEnergyDF <- energy_usage_phyDF %>% filter (STATE %in% c("TX", "NV", "CA", "NJ"), MSN %in% c("HYEGP", "NUEGP", "GEEGP", "SOEGP","TPOPP", "WYEGP")) %>% arrange(STATE)
 
 #Filter out the states we're interested in from the price dataset, as well as the (unadjusted) price for electricity in these states, including residential electricity and electricty for all uses (comercial, industrial, etc etc).
 priceDF <- energy_pricesDF %>% filter (STATE %in% c("TX", "NV", "CA", "NJ"), MSN %in% c("ESTCD", "ESRCD"))
@@ -49,7 +49,7 @@ CA_price <- melt(CA_price, id = "MSN")
 CA_price <- rename(CA_price, ESRCD = value)
 CA_price <- rename(CA_price, YEAR = variable)
 CA_price <- data.frame(CA_price) %>% select(YEAR, ESRCD)
-View(CA_price)
+
 
 #make cols for geothermal production
 CA_geo <- CA_energy %>% filter (MSN == "GEEGP")
@@ -57,7 +57,7 @@ CA_geo <- melt(CA_geo, id = "MSN")
 CA_geo <- rename(CA_geo, GEEGP = value)
 CA_geo <- rename(CA_geo, YEAR = variable)
 CA_geo <- data.frame(CA_geo) %>% select(YEAR, GEEGP)
-View(CA_geo)
+
 
 #make cols for hydroelectricity production
 CA_hy <- CA_energy %>% filter (MSN == "HYEGP")
@@ -65,7 +65,7 @@ CA_hy <- melt(CA_hy, id = "MSN")
 CA_hy <- rename(CA_hy, HYEGP = value)
 CA_hy <- rename(CA_hy, YEAR = variable)
 CA_hy <- data.frame(CA_hy) %>% select(YEAR, HYEGP)
-View(CA_hy)
+
 
 # make cols for nuclear electricity production
 CA_nu <- CA_energy %>% filter (MSN == "NUEGP")
@@ -73,26 +73,71 @@ CA_nu <- melt(CA_nu, id = "MSN")
 CA_nu <- rename(CA_nu, NUEGP = value)
 CA_nu <- rename(CA_nu, YEAR = variable)
 CA_nu <- data.frame(CA_nu) %>% select(YEAR, NUEGP)
-View(CA_nu)
 
 
-df_altEnergy
+# make cols for solar electricity production
+CA_so <- CA_energy %>% filter (MSN == "SOEGP")
+CA_so <- melt(CA_so, id = "MSN")
+CA_so <- rename(CA_so, SOEGP = value)
+CA_so <- rename(CA_so, YEAR = variable)
+CA_so <- data.frame(CA_so) %>% select(YEAR, SOEGP)
+
+# make cols for wind electricity production
+CA_wy <- CA_energy %>% filter (MSN == "WYEGP")
+CA_wy <- melt(CA_wy, id = "MSN")
+CA_wy <- rename(CA_wy, WYEGP = value)
+CA_wy <- rename(CA_wy, YEAR = variable)
+CA_wy <- data.frame(CA_wy) %>% select(YEAR, WYEGP)
+
+#make cols for total population
+CA_pop <- CA_energy %>% filter (MSN == "TPOPP")
+CA_pop <- melt(CA_pop, id = "MSN")
+CA_pop <- rename(CA_pop, TPOPP = value)
+CA_pop <- rename(CA_pop, YEAR = variable)
+CA_pop <- data.frame(CA_pop) %>% select(YEAR, TPOPP)
+View(CA_pop)
+
+#join rows in desired form.
+CA_all <- dplyr::full_join(CA_price, CA_geo, "YEAR")
+CA_all <- dplyr::full_join(CA_all, CA_hy, "YEAR")
+CA_all <- dplyr::full_join(CA_all, CA_nu, "YEAR")
+CA_all <- dplyr::full_join(CA_all, CA_so, "YEAR")
+CA_all <- dplyr::full_join(CA_all, CA_wy, "YEAR")
+CA_all <- dplyr::full_join(CA_all, CA_pop, "YEAR")
+
+#mutate in cols that account for population, want produciton per population... Is treating the different values as discrete, not continuous. Need to change.
+CA_all <- CA_all %>% mutate(geo = as.numeric(GEEGP), nuc = as.numeric(NUEGP), hydro = as.numeric(HYEGP), wind = as.numeric(WYEGP), sol = as.numeric(SOEGP), pop = as.numeric (TPOPP), price = as.numeric(ESRCD), year = as.character(YEAR)) %>% select(year, price, pop, geo, nuc, hydro, wind, sol)
+
+CA_all <- CA_all %>% arrange(year)
+View(CA_all)
+
+#once again we melt in order to view multiple variables on one plot
+CA_graph <- melt(CA_all, id.vars = "year")
+
+View(CA_graph)
+
+ggplot(CA_graph, aes(y = value, x = year, color = variable)) +
+  geom_point() +
+  geom_line(aes(group = variable)) +
+  theme(axis.text.x=element_text(angle=50, size=10, vjust=0.5)) +
+  coord_cartesian()
 
 #pass into ggplot
 ggplot() + 
   coord_cartesian() + 
   scale_x_discrete() +
   scale_y_continuous() +
-  facet_grid(~STATE) +
+  #facet_grid(~STATE) +
   labs(title='Alternate Energy Production and Price by Year') +
   labs(x="Year", y=paste("Production (phy untis), Price (dollars)")) +
   theme(axis.text.x=element_text(angle=50, size=10, vjust=0.5)) +
-  layer(data=df_altEnergy, 
-        mapping=aes(x=(X1970:X2013), y=), color=MSN), 
+  layer(data=CA_graph, 
+        mapping=aes(x=(year), y=value, color = variable), 
         stat="identity", 
         stat_params=list(), 
         geom="point",
-        geom_params=list(), 
+        geom_params=list(),
+        geom_line(aes(group = variable)), 
         #position=position_identity()
         position=position_jitter(width=0.2, height=0)
   )
