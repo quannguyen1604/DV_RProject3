@@ -177,11 +177,159 @@ cat(sql)</code></pre>
 </div>
 <div id="summary-and-subset" class="section level2">
 <h2>06. Summary and Subset</h2>
+<p>Since we have 7 CSV files in total, we will only create one dataframe from one of the data tables on Oracle for demonstration: Energy Price of 50 states and D.C. OVer the Years.</p>
 <div id="summary-of-dataframe" class="section level3">
 <h3>Summary of Dataframe</h3>
+<p>Creating dataframe from Oracle’s database with SQL query:</p>
+<pre class="r"><code>require(&quot;jsonlite&quot;)</code></pre>
+<pre><code>## Loading required package: jsonlite
+## 
+## Attaching package: 'jsonlite'
+## 
+## The following object is masked from 'package:utils':
+## 
+##     View</code></pre>
+<pre class="r"><code>require(&quot;RCurl&quot;)</code></pre>
+<pre><code>## Loading required package: RCurl
+## Loading required package: bitops</code></pre>
+<pre class="r"><code>dframe &lt;- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query=&quot;select * from energy_prices&quot;'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))</code></pre>
+<pre class="r"><code>summary(dframe)</code></pre>
+<pre><code>##   DATA_STATUS       STATE           MSN           X1970      
+##  Min.   :2013   US     : 114   ARICD  :  52   Min.   :0.000  
+##  1st Qu.:2013   AK     : 112   ARTCD  :  52   1st Qu.:0.460  
+##  Median :2013   AL     : 112   ARTXD  :  52   Median :0.970  
+##  Mean   :2013   AR     : 112   AVACD  :  52   Mean   :1.401  
+##  3rd Qu.:2013   AZ     : 112   AVTCD  :  52   3rd Qu.:1.850  
+##  Max.   :2013   CA     : 112   AVTXD  :  52   Max.   :9.920  
+##                 (Other):5152   (Other):5514                  
+##      X1971            X1972           X1973            X1974       
+##  Min.   : 0.000   Min.   : 0.00   Min.   : 0.000   Min.   : 0.000  
+##  1st Qu.: 0.560   1st Qu.: 0.58   1st Qu.: 0.660   1st Qu.: 1.150  
+##  Median : 1.010   Median : 1.05   Median : 1.210   Median : 2.040  
+##  Mean   : 1.464   Mean   : 1.51   Mean   : 1.652   Mean   : 2.364  
+##  3rd Qu.: 1.900   3rd Qu.: 1.98   3rd Qu.: 2.230   3rd Qu.: 3.010  
+##  Max.   :10.530   Max.   :10.64   Max.   :11.300   Max.   :15.220  
+##                                                                    
+##      X1975            X1976            X1977            X1978       
+##  Min.   : 0.000   Min.   : 0.000   Min.   : 0.000   Min.   : 0.000  
+##  1st Qu.: 1.330   1st Qu.: 1.440   1st Qu.: 1.660   1st Qu.: 1.650  
+##  Median : 2.260   Median : 2.410   Median : 2.710   Median : 2.900  
+##  Mean   : 2.634   Mean   : 2.762   Mean   : 3.034   Mean   : 3.202  
+##  3rd Qu.: 3.430   3rd Qu.: 3.590   3rd Qu.: 3.970   3rd Qu.: 4.240  
+##  Max.   :16.570   Max.   :18.110   Max.   :18.680   Max.   :21.000  
+##                                                                     
+##      X1979            X1980            X1981            X1982       
+##  Min.   : 0.000   Min.   : 0.000   Min.   : 0.000   Min.   : 0.000  
+##  1st Qu.: 2.040   1st Qu.: 2.362   1st Qu.: 2.780   1st Qu.: 2.720  
+##  Median : 3.840   Median : 5.280   Median : 6.265   Median : 6.390  
+##  Mean   : 4.068   Mean   : 5.483   Mean   : 6.500   Mean   : 6.516  
+##  3rd Qu.: 5.520   3rd Qu.: 7.630   3rd Qu.: 9.137   3rd Qu.: 8.930  
+##  Max.   :22.180   Max.   :26.400   Max.   :37.830   Max.   :39.530  
+##                                                                     
+##      X1983            X1984            X1985            X1986       
+##  Min.   : 0.000   Min.   : 0.000   Min.   : 0.000   Min.   : 0.000  
+##  1st Qu.: 3.080   1st Qu.: 3.212   1st Qu.: 3.070   1st Qu.: 2.100  
+##  Median : 6.350   Median : 6.250   Median : 6.120   Median : 4.740  
+##  Mean   : 6.395   Mean   : 6.429   Mean   : 6.512   Mean   : 5.607  
+##  3rd Qu.: 8.410   3rd Qu.: 8.420   3rd Qu.: 8.800   3rd Qu.: 7.070  
+##  Max.   :35.750   Max.   :35.750   Max.   :34.410   Max.   :31.190  
+##                                                                     
+##      X1987            X1988            X1989            X1990       
+##  Min.   : 0.000   Min.   : 0.000   Min.   : 0.000   Min.   : 0.000  
+##  1st Qu.: 2.180   1st Qu.: 2.030   1st Qu.: 2.020   1st Qu.: 2.252  
+##  Median : 4.610   Median : 4.370   Median : 4.790   Median : 5.690  
+##  Mean   : 5.543   Mean   : 5.469   Mean   : 5.792   Mean   : 6.335  
+##  3rd Qu.: 7.280   3rd Qu.: 7.310   3rd Qu.: 7.888   3rd Qu.: 8.930  
+##  Max.   :48.180   Max.   :46.870   Max.   :47.210   Max.   :33.540  
+##                                                                     
+##      X1991           X1992            X1993            X1994       
+##  Min.   : 0.00   Min.   : 0.000   Min.   : 0.000   Min.   : 0.000  
+##  1st Qu.: 2.11   1st Qu.: 2.030   1st Qu.: 2.132   1st Qu.: 2.170  
+##  Median : 5.27   Median : 4.965   Median : 4.970   Median : 4.930  
+##  Mean   : 6.39   Mean   : 6.351   Mean   : 6.291   Mean   : 6.324  
+##  3rd Qu.: 8.71   3rd Qu.: 8.540   3rd Qu.: 8.240   3rd Qu.: 8.190  
+##  Max.   :35.08   Max.   :36.430   Max.   :38.610   Max.   :39.720  
+##                                                                    
+##      X1995            X1996            X1997            X1998       
+##  Min.   : 0.000   Min.   : 0.000   Min.   : 0.000   Min.   : 0.000  
+##  1st Qu.: 2.200   1st Qu.: 2.413   1st Qu.: 2.610   1st Qu.: 2.090  
+##  Median : 4.850   Median : 5.550   Median : 5.540   Median : 4.485  
+##  Mean   : 6.337   Mean   : 6.748   Mean   : 6.785   Mean   : 6.135  
+##  3rd Qu.: 8.360   3rd Qu.: 9.290   3rd Qu.: 9.390   3rd Qu.: 8.110  
+##  Max.   :40.730   Max.   :41.790   Max.   :43.370   Max.   :40.730  
+##                                                                     
+##      X1999            X2000           X2001            X2002       
+##  Min.   : 0.000   Min.   : 0.00   Min.   : 0.000   Min.   : 0.000  
+##  1st Qu.: 2.300   1st Qu.: 3.04   1st Qu.: 3.130   1st Qu.: 2.740  
+##  Median : 5.000   Median : 7.26   Median : 7.200   Median : 6.515  
+##  Mean   : 6.435   Mean   : 7.88   Mean   : 8.047   Mean   : 7.587  
+##  3rd Qu.: 8.810   3rd Qu.:11.06   3rd Qu.:11.010   3rd Qu.:10.490  
+##  Max.   :41.900   Max.   :48.09   Max.   :47.880   Max.   :45.820  
+##                                                                    
+##      X2003            X2004            X2005           X2006       
+##  Min.   : 0.000   Min.   : 0.000   Min.   : 0.00   Min.   : 0.000  
+##  1st Qu.: 3.300   1st Qu.: 3.635   1st Qu.: 4.75   1st Qu.: 5.152  
+##  Median : 7.865   Median : 9.520   Median :12.85   Median :14.730  
+##  Mean   : 8.563   Mean   : 9.667   Mean   :11.87   Mean   :13.726  
+##  3rd Qu.:12.110   3rd Qu.:14.000   3rd Qu.:17.28   3rd Qu.:19.730  
+##  Max.   :49.040   Max.   :52.940   Max.   :60.67   Max.   :68.430  
+##                                                                    
+##      X2007            X2008           X2009            X2010       
+##  Min.   : 0.000   Min.   : 0.00   Min.   : 0.000   Min.   : 0.000  
+##  1st Qu.: 5.473   1st Qu.: 5.65   1st Qu.: 4.622   1st Qu.: 5.053  
+##  Median :15.790   Median :18.92   Median :13.450   Median :16.410  
+##  Mean   :14.731   Mean   :17.61   Mean   :14.067   Mean   :15.906  
+##  3rd Qu.:21.698   3rd Qu.:25.99   3rd Qu.:19.475   3rd Qu.:22.718  
+##  Max.   :70.700   Max.   :95.24   Max.   :70.930   Max.   :82.360  
+##                                                                    
+##      X2011             X2012            X2013        
+##  Min.   :  0.000   Min.   :  0.00   Min.   :  0.000  
+##  1st Qu.:  5.112   1st Qu.:  4.73   1st Qu.:  4.765  
+##  Median : 20.765   Median : 20.49   Median : 20.730  
+##  Mean   : 18.825   Mean   : 19.10   Mean   : 18.865  
+##  3rd Qu.: 27.660   3rd Qu.: 28.34   3rd Qu.: 27.988  
+##  Max.   :101.640   Max.   :109.45   Max.   :108.400  
+## </code></pre>
 </div>
 <div id="subset-of-dataframe" class="section level3">
 <h3>Subset of Dataframe</h3>
+<p>Energy Price at Texas, a subset of the Energy Price dataframe:</p>
+<pre class="r"><code>head(subset(dframe, STATE == &quot;TX&quot;))</code></pre>
+<pre><code>##      DATA_STATUS STATE   MSN X1970 X1971 X1972 X1973 X1974 X1975 X1976
+## 5253        2013    TX ARICD  0.74  0.76  0.78  0.77  1.56  1.77  1.85
+## 5254        2013    TX ARTCD  0.74  0.76  0.78  0.77  1.56  1.77  1.85
+## 5255        2013    TX ARTXD  0.74  0.76  0.78  0.77  1.56  1.77  1.85
+## 5256        2013    TX AVACD  2.17  2.21  2.19  2.36  3.23  3.45  3.59
+## 5257        2013    TX AVTCD  2.17  2.21  2.19  2.36  3.23  3.45  3.59
+## 5258        2013    TX AVTXD  2.17  2.21  2.19  2.36  3.23  3.45  3.59
+##      X1977 X1978 X1979 X1980 X1981 X1982 X1983 X1984 X1985 X1986 X1987
+## 5253  2.00  2.22  2.51  3.79  5.18  4.42  4.24  4.19  4.20  4.58  3.35
+## 5254  2.00  2.22  2.51  3.79  5.18  4.42  4.24  4.19  4.20  4.58  3.35
+## 5255  2.00  2.22  2.51  3.79  5.18  4.42  4.24  4.19  4.20  4.58  3.35
+## 5256  3.97  4.29  5.73  9.02 10.84 10.92 10.44 10.27  9.99  8.41  7.55
+## 5257  3.97  4.29  5.73  9.02 10.84 10.92 10.44 10.27  9.99  8.41  7.55
+## 5258  3.97  4.29  5.73  9.02 10.84 10.92 10.44 10.27  9.99  8.41  7.55
+##      X1988 X1989 X1990 X1991 X1992 X1993 X1994 X1995 X1996 X1997 X1998
+## 5253  3.21  2.84  2.94  3.33  2.33  3.14  2.94  3.18  3.32  3.49  3.54
+## 5254  3.21  2.84  2.94  3.33  2.33  3.14  2.94  3.18  3.32  3.49  3.54
+## 5255  3.21  2.84  2.94  3.33  2.33  3.14  2.94  3.18  3.32  3.49  3.54
+## 5256  7.41  8.28  9.32  8.71  8.54  8.24  7.96  8.36  9.29  9.39  8.11
+## 5257  7.41  8.28  9.32  8.71  8.54  8.24  7.96  8.36  9.29  9.39  8.11
+## 5258  7.41  8.28  9.32  8.71  8.54  8.24  7.96  8.36  9.29  9.39  8.11
+##      X1999 X2000 X2001 X2002 X2003 X2004 X2005 X2006 X2007 X2008 X2009
+## 5253  3.73  3.80  3.79  3.83  4.22  4.74  5.30  5.73  6.16  6.37  6.72
+## 5254  3.73  3.80  3.79  3.83  4.22  4.74  5.30  5.73  6.16  6.37  6.72
+## 5255  3.73  3.80  3.79  3.83  4.22  4.74  5.30  5.73  6.16  6.37  6.72
+## 5256  8.81 10.87 11.01 10.72 12.42 15.13 18.56 22.31 23.70 27.23 20.32
+## 5257  8.81 10.87 11.01 10.72 12.42 15.13 18.56 22.31 23.70 27.23 20.32
+## 5258  8.81 10.87 11.01 10.72 12.42 15.13 18.56 22.31 23.70 27.23 20.32
+##      X2010 X2011 X2012 X2013
+## 5253  7.40  8.21  9.09 10.16
+## 5254  7.40  8.21  9.09 10.16
+## 5255  7.40  8.21  9.09 10.16
+## 5256 25.19 31.64 33.04 32.71
+## 5257 25.19 31.64 33.04 32.71
+## 5258 25.19 31.64 33.04 32.71</code></pre>
 </div>
 </div>
 <div id="visualizations" class="section level2">

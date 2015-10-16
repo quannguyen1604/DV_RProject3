@@ -128,10 +128,29 @@ cat(sql)
 
 ## 06. Summary and Subset
 
+Since we have 7 CSV files in total, we will only create one dataframe from one of the data tables on Oracle for demonstration: Energy Price of 50 states and D.C. OVer the Years.
 
 ### Summary of Dataframe
 
+Creating dataframe from Oracle's database with SQL query:
+
+```{r, warning = FALSE}
+require("jsonlite")
+require("RCurl")
+dframe <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_prices"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
+```
+
+```{r}
+summary(dframe)
+```  
+
 ### Subset of Dataframe
+
+Energy Price at Texas, a subset of the Energy Price dataframe:
+
+```{r, warning = FALSE}
+head(subset(dframe, STATE == "TX"))
+```
 
 ## 07. Visualizations
 
