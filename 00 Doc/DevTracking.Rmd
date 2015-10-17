@@ -123,10 +123,7 @@ sql <- paste(sql, ");")
 cat(sql)
 ```
 
-## 05. Peculiarities
-
-
-## 06. Summary and Subset
+## 05. Summary and Subset
 
 Since we have 7 CSV files in total, we will only create one dataframe from one of the data tables on Oracle for demonstration: Energy Price of 50 states and D.C. OVer the Years.
 
@@ -152,7 +149,7 @@ Energy Price at Texas, a subset of the Energy Price dataframe:
 head(subset(dframe, STATE == "TX"))
 ```
 
-## 07. Visualizations
+## 06. Visualizations
 
 
 ### The End
