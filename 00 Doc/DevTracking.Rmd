@@ -151,7 +151,134 @@ head(subset(dframe, STATE == "TX"))
 
 ## 06. Visualizations  
 
-### Alternative Energy Consumption Across States  
+### Visualization 1: Price Efficiency Across Sectors
+
+```{R, echo = FALSE, warning = FALSE}
+require(dplyr)
+require(tidyr)
+require(ggplot2)
+require(jsonlite)
+require(RCurl)
+require(stringr)
+
+dfexpend <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from ENERGY_EXPENDITURES;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
+
+dfprice <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from ENERGY_PRICES;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
+
+MSN_ref <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from ENERGY_MSN_LOOKUP;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
+
+# Find general Energy Type labels from MSN reference table
+MSN_ref %>% filter(UNIT != "Percent Share") %>% mutate(energy_label = word(DESCRIPTION,1)) %>% mutate(msn_short = substr(MSN, 0, 2)) %>% melt(id="energy_label") %>% rename(MSN = value) -> MSN_ref
+
+# create unique row ids by concatenating State and MSN code
+# pop last char of MSN, which codes for unit of measure, to obtain matching MSNs across expenditure and price
+dfexpend %>% mutate(row_id = paste(STATE, '_', substr(MSN, 0, 4), sep='')) -> dfexpend
+dfprice %>% mutate(row_id = paste(STATE, '_', substr(MSN, 0, 4), sep='')) -> dfprice
+
+# melt data down so year is variable, not column name
+newex <- dfexpend %>% select(-DATA_STATUS) %>% melt(., id=c('row_id','STATE','MSN')) %>% rename(year = variable) %>% rename(expenditure = value)
+newpr <- dfprice %>% select(-DATA_STATUS) %>% melt(., id=c('row_id','STATE','MSN')) %>% rename(year = variable) %>% rename(price = value)
+
+# append energy labels to newex
+left_join(newex, MSN_ref, by=("MSN")) %>% select(-variable) -> newex
+
+# join expenses and prices
+dplyr::full_join(newex, newpr, by=c("row_id","year","STATE")) -> prex
+prex %>% mutate(year = substr(year, 2, 5)) %>% mutate(energy_type = substr(MSN.x, 0, 3)) -> prex
+
+
+prex %>% filter(STATE != "US") %>% filter(energy_label != "All") %>% filter(energy_label != "Total") %>% filter(energy_label != "Primary") %>% filter(price < 1000000) %>% filter(expenditure < 100000) %>% ggplot(aes(x=as.numeric(expenditure), y =as.numeric(price), color=as.numeric(year))) + geom_point() + facet_wrap(~energy_label) + labs(x="Expenditures", y="Price") + labs(title="Price to Expenditure Ratio By Energy Sector") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+- This graph shows broadly the relationship between cost to the producer and cost to the consumer of energy prices, and how this relationship differs across sectors.
+
+- Electricity and Motor Fuel have far and away the most consistently high cost-to-price ratio, but in recent years natural gas, asphalt, distillate, and petrochemical have shown high ratios as well
+
+- Lubricants, Aviation fuel, Kerosene, Waxes, and Wood show an astoundingly low cost-to-price ratio, indicating that profit margins are far higher than average for the companies that produce them (compared, at least, to other energy sectors)
+
+- Interestingly, nuclear energy has had astoundingly low costs and prices since it (relatively recently) began being recorded. For the interest of both the consumer and the producer, this makes a compelling argument for the propagation or nuclear energy.
+
+### Visualization 2: U.S. Natural Gas Data
+
+Description:
+
+- My visualization looks at data for natural gas for the whole U.S., comparing production versus consumption, and price versus expenditure.
+
+- Since price is in dollars per unit gas while expenditure is in total dollars for each year, I had to convert them into the same unit by dividing expenditure with gas production at each year.
+
+```{r, eval=FALSE}
+require(tidyr)
+require(dplyr)
+require(ggplot2)
+require(reshape2)
+require("jsonlite")
+require("RCurl")
+
+allProd <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_production_data;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
+
+allUse <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_usage_btu;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
+
+allExpend <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_expenditures;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
+
+allPrices <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_prices;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
+
+qdf1 <- allProd %>% rename(., STATE = STATECODE) %>% filter (MSN == "NGMPB", STATE == "US") %>% select (-DATA_STATUS, -STATE) %>% melt(., id = "MSN") %>% select(-MSN) %>% rename(., YEAR = variable, PRODUCTION = value)
+
+qdf2 <- allUse %>% filter (MSN == "NGTCB", STATE == "US") %>% select (-DATA_STATUS, -STATE) %>% melt(., id = "MSN") %>% select(-MSN) %>% rename(., YEAR = variable, CONSUMPTION = value)
+
+qdf3 <- inner_join(qdf1, qdf2, "YEAR") %>% sapply(.,gsub,pattern="X",replacement="") %>% data.frame(.) %>% melt(., id="YEAR")
+
+p1 <- ggplot() + 
+  coord_cartesian() + 
+  scale_x_continuous() +
+  scale_y_continuous() +
+  labs(title='U.S Natural Gas Production and Consumption') +
+  labs(x="YEAR", y="BILLION BTU") +
+  layer(data=qdf3, 
+        mapping=aes(x= as.numeric(as.character(YEAR)), y=as.numeric(as.character(value)), color=variable), 
+        stat="identity", 
+        stat_params=list(), 
+        geom="line",
+        geom_params=list(),
+        geom_line(aes(group = variable)),
+        position=position_jitter(width=0.2, height=0)
+  )
+
+qdf4 <- allPrices %>% filter (MSN == "NGTCD", STATE == "US") %>% select (-DATA_STATUS, -STATE) %>% melt(., id = "MSN") %>% select(-MSN) %>% rename(., YEAR = variable, PRICE = value)
+
+qdf5 <- allExpend %>% filter (MSN == "NGTCV", STATE == "US") %>% select (-DATA_STATUS, -STATE) %>% melt(., id = "MSN") %>% select(-MSN) %>% rename(., YEAR = variable, EXPEND = value) %>% inner_join(., qdf1, "YEAR") %>% mutate(EXPENDITURE =  1000*as.numeric(EXPEND)/as.numeric(PRODUCTION)) %>% select (-EXPEND, -PRODUCTION) %>% inner_join(., qdf4, "YEAR") %>% sapply(.,gsub,pattern="X",replacement="") %>% data.frame(.) %>% melt(., id="YEAR")
+
+p2 <- ggplot() + 
+  coord_cartesian() + 
+  scale_x_continuous() +
+  scale_y_continuous() +
+  labs(title='U.S Natural Gas Price and Expenditure') +
+  labs(x="YEAR", y="DOLLAR PER MILLION BTU") +
+  layer(data=qdf5, 
+        mapping=aes(x= as.numeric(as.character(YEAR)), y=as.numeric(as.character(value)), color=variable), 
+        stat="identity", 
+        stat_params=list(), 
+        geom="line",
+        geom_params=list(),
+        geom_line(aes(group = variable)),
+        position=position_jitter(width=0.2, height=0)
+  )
+p1
+p2
+```
+
+![](./Graphics/RplotQ1.png)
+
+![](./Graphics/RplotQ2.png)
+
+Comments:
+
+- In the first plot, U.S. Natural Gas Production and Consumption over Year, the interesting point is that, during the period 1995-2009, consumption was actually higher than production. This indicates that the U.S. must have had to import natural gas from international market.
+
+- The second plot, U.S. Natural Gas Price and Expenditure, partially explains the situation. We can easily notice that, roughly during the same period, the cost to produce one unit of natural gas climbed up dramatically compared to earlier years. This usually results in production slowdown, which explains why consumption overtook production in this period. Also notice that the profit margin (difference between price and expenditure) was particularly thin during this time.
+
+### Visualization 3: Alternative Energy Consumption Across States  
 
 -The goal of this visualization is to explore the consumption of alternative energy across different states. I would have prefered to look at the production of alternative energy, but unfortunatly this data was excluded from the CSV files we used, so I must instead use consumption to infer similar conclusions. I am aware this is not the optimal method, but it's the best that I have.  
 -In order to better compare across states, I divided the net energy consumed of each generator (nuclear, hydro, solar, geothermal, and wind) by the population of the state. My reasoning is simple: larger states will clearly consume more energy, thus making it difficult to compare the efforts of large and small states are making towards alternative energy sources. Each data point is therefor "the energy generated by X that was consumed per one-thousand citizens", where X is the alternate energy source.  
@@ -455,136 +582,5 @@ ggplot(graph, aes(y = value, x = year, color = variable)) +
   coord_cartesian()
 ```
 
-
-### Price Efficiency Across Sectors
-
-```{R, echo = FALSE, warning = FALSE}
-require(dplyr)
-require(tidyr)
-require(ggplot2)
-require(jsonlite)
-require(RCurl)
-require(stringr)
-
-dfexpend <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from ENERGY_EXPENDITURES;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
-
-dfprice <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from ENERGY_PRICES;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
-
-MSN_ref <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from ENERGY_MSN_LOOKUP;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
-
-# Find general Energy Type labels from MSN reference table
-MSN_ref %>% filter(UNIT != "Percent Share") %>% mutate(energy_label = word(DESCRIPTION,1)) %>% mutate(msn_short = substr(MSN, 0, 2)) %>% melt(id="energy_label") %>% rename(MSN = value) -> MSN_ref
-
-# create unique row ids by concatenating State and MSN code
-# pop last char of MSN, which codes for unit of measure, to obtain matching MSNs across expenditure and price
-dfexpend %>% mutate(row_id = paste(STATE, '_', substr(MSN, 0, 4), sep='')) -> dfexpend
-dfprice %>% mutate(row_id = paste(STATE, '_', substr(MSN, 0, 4), sep='')) -> dfprice
-
-# melt data down so year is variable, not column name
-newex <- dfexpend %>% select(-DATA_STATUS) %>% melt(., id=c('row_id','STATE','MSN')) %>% rename(year = variable) %>% rename(expenditure = value)
-newpr <- dfprice %>% select(-DATA_STATUS) %>% melt(., id=c('row_id','STATE','MSN')) %>% rename(year = variable) %>% rename(price = value)
-
-# append energy labels to newex
-left_join(newex, MSN_ref, by=("MSN")) %>% select(-variable) -> newex
-
-# join expenses and prices
-dplyr::full_join(newex, newpr, by=c("row_id","year","STATE")) -> prex
-prex %>% mutate(year = substr(year, 2, 5)) %>% mutate(energy_type = substr(MSN.x, 0, 3)) -> prex
-
-
-prex %>% filter(STATE != "US") %>% filter(energy_label != "All") %>% filter(energy_label != "Total") %>% filter(energy_label != "Primary") %>% filter(price < 1000000) %>% filter(expenditure < 100000) %>% ggplot(aes(x=as.numeric(expenditure), y =as.numeric(price), color=as.numeric(year))) + geom_point() + facet_wrap(~energy_label) + labs(x="Expenditures", y="Price") + labs(title="Price to Expenditure Ratio By Energy Sector") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-```
-
-- This graph shows broadly the relationship between cost to the producer and cost to the consumer of energy prices, and how this relationship differs across sectors.
-
-- Electricity and Motor Fuel have far and away the most consistently high cost-to-price ratio, but in recent years natural gas, asphalt, distillate, and petrochemical have shown high ratios as well
-
-- Lubricants, Aviation fuel, Kerosene, Waxes, and Wood show an astoundingly low cost-to-price ratio, indicating that profit margins are far higher than average for the companies that produce them (compared, at least, to other energy sectors)
-
-- Interestingly, nuclear energy has had astoundingly low costs and prices since it (relatively recently) began being recorded. For the interest of both the consumer and the producer, this makes a compelling argument for the propagation or nuclear energy.
-
-### Visualization No. 1:
-
-Description:
-
-- My visualization looks at data for natural gas for the whole U.S., comparing production versus consumption, and price versus expenditure.
-
-- Since price is in dollars per unit gas while expenditure is in total dollars for each year, I had to convert them into the same unit by dividing expenditure with gas production at each year.
-
-```{r, eval=FALSE}
-require(tidyr)
-require(dplyr)
-require(ggplot2)
-require(reshape2)
-require("jsonlite")
-require("RCurl")
-
-allProd <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_production_data;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
-
-allUse <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_usage_btu;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
-
-allExpend <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_expenditures;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
-
-allPrices <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_prices;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
-
-qdf1 <- allProd %>% rename(., STATE = STATECODE) %>% filter (MSN == "NGMPB", STATE == "US") %>% select (-DATA_STATUS, -STATE) %>% melt(., id = "MSN") %>% select(-MSN) %>% rename(., YEAR = variable, PRODUCTION = value)
-
-qdf2 <- allUse %>% filter (MSN == "NGTCB", STATE == "US") %>% select (-DATA_STATUS, -STATE) %>% melt(., id = "MSN") %>% select(-MSN) %>% rename(., YEAR = variable, CONSUMPTION = value)
-
-qdf3 <- inner_join(qdf1, qdf2, "YEAR") %>% sapply(.,gsub,pattern="X",replacement="") %>% data.frame(.) %>% melt(., id="YEAR")
-
-p1 <- ggplot() + 
-  coord_cartesian() + 
-  scale_x_continuous() +
-  scale_y_continuous() +
-  labs(title='U.S Natural Gas Production and Consumption') +
-  labs(x="YEAR", y="BILLION BTU") +
-  layer(data=qdf3, 
-        mapping=aes(x= as.numeric(as.character(YEAR)), y=as.numeric(as.character(value)), color=variable), 
-        stat="identity", 
-        stat_params=list(), 
-        geom="line",
-        geom_params=list(),
-        geom_line(aes(group = variable)),
-        position=position_jitter(width=0.2, height=0)
-  )
-
-qdf4 <- allPrices %>% filter (MSN == "NGTCD", STATE == "US") %>% select (-DATA_STATUS, -STATE) %>% melt(., id = "MSN") %>% select(-MSN) %>% rename(., YEAR = variable, PRICE = value)
-
-qdf5 <- allExpend %>% filter (MSN == "NGTCV", STATE == "US") %>% select (-DATA_STATUS, -STATE) %>% melt(., id = "MSN") %>% select(-MSN) %>% rename(., YEAR = variable, EXPEND = value) %>% inner_join(., qdf1, "YEAR") %>% mutate(EXPENDITURE =  1000*as.numeric(EXPEND)/as.numeric(PRODUCTION)) %>% select (-EXPEND, -PRODUCTION) %>% inner_join(., qdf4, "YEAR") %>% sapply(.,gsub,pattern="X",replacement="") %>% data.frame(.) %>% melt(., id="YEAR")
-
-p2 <- ggplot() + 
-  coord_cartesian() + 
-  scale_x_continuous() +
-  scale_y_continuous() +
-  labs(title='U.S Natural Gas Price and Expenditure') +
-  labs(x="YEAR", y="DOLLAR PER MILLION BTU") +
-  layer(data=qdf5, 
-        mapping=aes(x= as.numeric(as.character(YEAR)), y=as.numeric(as.character(value)), color=variable), 
-        stat="identity", 
-        stat_params=list(), 
-        geom="line",
-        geom_params=list(),
-        geom_line(aes(group = variable)),
-        position=position_jitter(width=0.2, height=0)
-  )
-p1
-p2
-```
-
-![](./Graphics/RplotQ1.png)
-
-![](./Graphics/RplotQ2.png)
-
-Comments:
-
-- In the first plot, U.S. Natural Gas Production and Consumption over Year, the interesting point is that, during the period 1995-2009, consumption was actually higher than production. This indicates that the U.S. must have had to import natural gas from international market.
-
-- The second plot, U.S. Natural Gas Price and Expenditure, partially explains the situation. We can easily notice that, roughly during the same period, the cost to produce one unit of natural gas climbed up dramatically compared to earlier years. This usually results in production slowdown, which explains why consumption overtook production in this period. Also notice that the profit margin (difference between price and expenditure) was particularly thin during this time.
-
-
-
 ### The End
-  
   
