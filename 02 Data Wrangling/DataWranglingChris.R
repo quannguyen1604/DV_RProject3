@@ -31,5 +31,5 @@ dplyr::full_join(newex, newpr, by=c("row_id","year","STATE")) -> prex
 prex %>% mutate(year = substr(year, 2, 5)) %>% mutate(energy_type = substr(MSN.x, 0, 3)) -> prex
 
 
-prex %>% filter(STATE != "US") %>% filter(energy_label != "All") %>% filter(energy_label != "Total") %>% filter(energy_label != "Primary") %>% filter(price < 1000000) %>% filter(expenditure < 100000) %>% ggplot(aes(x=as.numeric(expenditure), y =as.numeric(price), color=as.numeric(year))) + geom_point() + facet_wrap(~energy_label) + labs(x="Expenditures", y="Price") + labs(title="Price to Expenditure Ratio By Energy Sector")
+prex %>% filter(STATE != "US") %>% filter(energy_label != "All") %>% filter(energy_label != "Total") %>% filter(energy_label != "Primary") %>% filter(price < 1000000) %>% filter(expenditure < 100000) %>% ggplot(aes(x=as.numeric(expenditure), y =as.numeric(price), color=as.numeric(year))) + geom_point() + facet_wrap(~energy_label) + labs(x="Expenditures", y="Price") + labs(title="Price to Expenditure Ratio By Energy Sector") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
