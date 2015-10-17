@@ -7,13 +7,13 @@ energyProductionDF <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/
 
 energy_expendituresDF <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_expenditures;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
 
-energy_pricesDF <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_prices WHERE x1960 >= -100000000;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
-
 energy_msn_lookupDF <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_msn_lookup;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
 
 energy_adjusted_pricesDF <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_adjusted_prices;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
 
 energy_usage_btuDF <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_usage_btu;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
+
+energy_pricesDF <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_prices WHERE x1960 >= -100000000;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
 
 energy_usage_phyDF <- data.frame(fromJSON(getURL(URLencode('129.152.144.84:5001/rest/native/?query="select * from energy_usage_phy WHERE X1960 >= 0;"'),httpheader=c(DB='jdbc:oracle:thin:@129.152.144.84:1521/PDBF15DV.usuniversi01134.oraclecloud.internal', USER='cs329e_cjs2599', PASS='orcl_cjs2599', MODE='native_mode', MODEL='model', returnDimensions = 'False', returnFor = 'JSON'), verbose = TRUE), ))
 
@@ -161,13 +161,12 @@ CA_ratio <- CA_all %>% mutate(geo_per_1k =  (as.numeric(GEEGP)/as.numeric(TPOPP)
 TX_ratio <- TX_all %>% mutate(geo_per_1k =  (as.numeric(GEEGP)/as.numeric(TPOPP)), nuc_per_1k = as.numeric(NUEGP)/as.numeric(TPOPP), hydro_per_1k = as.numeric(HYEGP)/as.numeric(TPOPP), wind_per_1k = as.numeric(WYEGP)/as.numeric(TPOPP), sol_per_1k =as.numeric(SOEGP)/as.numeric(TPOPP), pop = as.numeric (TPOPP), price = as.numeric(ESRCD), year = as.character(YEAR)) %>% select(year, geo_per_1k, nuc_per_1k, hydro_per_1k, wind_per_1k, sol_per_1k)
 
 CA_ratio <- CA_ratio %>% arrange(year) %>% mutate (STATE = "CA")
-View(CA_ratio)
 
 TX_ratio <- TX_ratio %>% arrange(year) %>% mutate (STATE = "TX")
 
 graph_all <- CA_ratio
 graph_all <- dplyr::bind_rows(graph_all, TX_ratio)
-View(graph_all)
+
 #once again we melt in order to view multiple variables on one plot
 CA_graph <- melt(CA_ratio, id.vars = "year")
 graph <-  melt(graph_all, id.vars = c("year", "STATE"))
