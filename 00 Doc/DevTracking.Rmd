@@ -456,6 +456,7 @@ ggplot(graph, aes(y = value, x = year, color = variable)) +
 ```
 
 
+### Price Efficiency Across Sectors
 
 ```{R, echo = FALSE, warning = FALSE}
 require(dplyr)
