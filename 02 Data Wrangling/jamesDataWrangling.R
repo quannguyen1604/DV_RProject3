@@ -59,6 +59,12 @@ TX_price <- rename(TX_price, ESRCD = value)
 TX_price <- rename(TX_price, YEAR = variable)
 TX_price <- data.frame(TX_price) %>% select(YEAR, ESRCD)
 
+NV_price <- NV_energy %>% filter (MSN == "ESRCD")
+NV_price <- melt(NV_price, id = "MSN")
+NV_price <- rename(NV_price, ESRCD = value)
+NV_price <- rename(NV_price, YEAR = variable)
+NV_price <- data.frame(NV_price) %>% select(YEAR, ESRCD)
+
 #make cols for geothermal production
 CA_geo <- CA_energy %>% filter (MSN == "GEEGP")
 CA_geo <- melt(CA_geo, id = "MSN")
@@ -72,6 +78,12 @@ TX_geo <- rename(TX_geo, GEEGP = value)
 TX_geo <- rename(TX_geo, YEAR = variable)
 TX_geo <- data.frame(TX_geo) %>% select(YEAR, GEEGP)
 
+NV_geo <- NV_energy %>% filter (MSN == "GEEGP")
+NV_geo <- melt(NV_geo, id = "MSN")
+NV_geo <- rename(NV_geo, GEEGP = value)
+NV_geo <- rename(NV_geo, YEAR = variable)
+NV_geo <- data.frame(NV_geo) %>% select(YEAR, GEEGP)
+
 #make cols for hydroelectricity production
 CA_hy <- CA_energy %>% filter (MSN == "HYEGP")
 CA_hy <- melt(CA_hy, id = "MSN")
@@ -84,6 +96,12 @@ TX_hy <- melt(TX_hy, id = "MSN")
 TX_hy <- rename(TX_hy, HYEGP = value)
 TX_hy <- rename(TX_hy, YEAR = variable)
 TX_hy <- data.frame(TX_hy) %>% select(YEAR, HYEGP)
+
+NV_hy <- NV_energy %>% filter (MSN == "HYEGP")
+NV_hy <- melt(NV_hy, id = "MSN")
+NV_hy <- rename(NV_hy, HYEGP = value)
+NV_hy <- rename(NV_hy, YEAR = variable)
+NV_hy <- data.frame(NV_hy) %>% select(YEAR, HYEGP)
 
 
 # make cols for nuclear electricity production
@@ -99,6 +117,12 @@ TX_nu <- rename(TX_nu, NUEGP = value)
 TX_nu <- rename(TX_nu, YEAR = variable)
 TX_nu <- data.frame(TX_nu) %>% select(YEAR, NUEGP)
 
+NV_nu <- NV_energy %>% filter (MSN == "NUEGP")
+NV_nu <- melt(NV_nu, id = "MSN")
+NV_nu <- rename(NV_nu, NUEGP = value)
+NV_nu <- rename(NV_nu, YEAR = variable)
+NV_nu <- data.frame(NV_nu) %>% select(YEAR, NUEGP)
+
 
 # make cols for solar electricity production
 CA_so <- CA_energy %>% filter (MSN == "SOEGP")
@@ -113,6 +137,12 @@ TX_so <- rename(TX_so, SOEGP = value)
 TX_so <- rename(TX_so, YEAR = variable)
 TX_so <- data.frame(TX_so) %>% select(YEAR, SOEGP)
 
+NV_so <- NV_energy %>% filter (MSN == "SOEGP")
+NV_so <- melt(NV_so, id = "MSN")
+NV_so <- rename(NV_so, SOEGP = value)
+NV_so <- rename(NV_so, YEAR = variable)
+NV_so <- data.frame(NV_so) %>% select(YEAR, SOEGP)
+
 # make cols for wind electricity production
 CA_wy <- CA_energy %>% filter (MSN == "WYEGP")
 CA_wy <- melt(CA_wy, id = "MSN")
@@ -126,6 +156,12 @@ TX_wy <- rename(TX_wy, WYEGP = value)
 TX_wy <- rename(TX_wy, YEAR = variable)
 TX_wy <- data.frame(TX_wy) %>% select(YEAR, WYEGP)
 
+NV_wy <- NV_energy %>% filter (MSN == "WYEGP")
+NV_wy <- melt(NV_wy, id = "MSN")
+NV_wy <- rename(NV_wy, WYEGP = value)
+NV_wy <- rename(NV_wy, YEAR = variable)
+NV_wy <- data.frame(NV_wy) %>% select(YEAR, WYEGP)
+
 #make cols for total population
 CA_pop <- CA_energy %>% filter (MSN == "TPOPP")
 CA_pop <- melt(CA_pop, id = "MSN")
@@ -138,6 +174,12 @@ TX_pop <- melt(TX_pop, id = "MSN")
 TX_pop <- rename(TX_pop, TPOPP = value)
 TX_pop <- rename(TX_pop, YEAR = variable)
 TX_pop <- data.frame(TX_pop) %>% select(YEAR, TPOPP)
+
+NV_pop <- NV_energy %>% filter (MSN == "TPOPP")
+NV_pop <- melt(NV_pop, id = "MSN")
+NV_pop <- rename(NV_pop, TPOPP = value)
+NV_pop <- rename(NV_pop, YEAR = variable)
+NV_pop <- data.frame(NV_pop) %>% select(YEAR, TPOPP)
 
 
 #join rows in desired form.
@@ -155,17 +197,29 @@ TX_all <- dplyr::full_join(TX_all, TX_so, "YEAR")
 TX_all <- dplyr::full_join(TX_all, TX_wy, "YEAR")
 TX_all <- dplyr::full_join(TX_all, TX_pop, "YEAR")
 
+NV_all <- dplyr::full_join(NV_price, NV_geo, "YEAR")
+NV_all <- dplyr::full_join(NV_all, NV_hy, "YEAR")
+NV_all <- dplyr::full_join(NV_all, NV_nu, "YEAR")
+NV_all <- dplyr::full_join(NV_all, NV_so, "YEAR")
+NV_all <- dplyr::full_join(NV_all, NV_wy, "YEAR")
+NV_all <- dplyr::full_join(NV_all, NV_pop, "YEAR")
+
 #mutate in cols that account for population, want produciton per population... Is treating the different values as discrete, not continuous. Need to change.
 CA_ratio <- CA_all %>% mutate(geo_per_1k =  (as.numeric(GEEGP)/as.numeric(TPOPP)), nuc_per_1k = as.numeric(NUEGP)/as.numeric(TPOPP), hydro_per_1k = as.numeric(HYEGP)/as.numeric(TPOPP), wind_per_1k = as.numeric(WYEGP)/as.numeric(TPOPP), sol_per_1k =as.numeric(SOEGP)/as.numeric(TPOPP), pop = as.numeric (TPOPP), price = as.numeric(ESRCD), year = as.character(YEAR)) %>% select(year, geo_per_1k, nuc_per_1k, hydro_per_1k, wind_per_1k, sol_per_1k)
 
 TX_ratio <- TX_all %>% mutate(geo_per_1k =  (as.numeric(GEEGP)/as.numeric(TPOPP)), nuc_per_1k = as.numeric(NUEGP)/as.numeric(TPOPP), hydro_per_1k = as.numeric(HYEGP)/as.numeric(TPOPP), wind_per_1k = as.numeric(WYEGP)/as.numeric(TPOPP), sol_per_1k =as.numeric(SOEGP)/as.numeric(TPOPP), pop = as.numeric (TPOPP), price = as.numeric(ESRCD), year = as.character(YEAR)) %>% select(year, geo_per_1k, nuc_per_1k, hydro_per_1k, wind_per_1k, sol_per_1k)
 
+NV_ratio <- NV_all %>% mutate(geo_per_1k =  (as.numeric(GEEGP)/as.numeric(TPOPP)), nuc_per_1k = as.numeric(NUEGP)/as.numeric(TPOPP), hydro_per_1k = as.numeric(HYEGP)/as.numeric(TPOPP), wind_per_1k = as.numeric(WYEGP)/as.numeric(TPOPP), sol_per_1k =as.numeric(SOEGP)/as.numeric(TPOPP), pop = as.numeric (TPOPP), price = as.numeric(ESRCD), year = as.character(YEAR)) %>% select(year, geo_per_1k, nuc_per_1k, hydro_per_1k, wind_per_1k, sol_per_1k)
+
 CA_ratio <- CA_ratio %>% arrange(year) %>% mutate (STATE = "CA")
 
 TX_ratio <- TX_ratio %>% arrange(year) %>% mutate (STATE = "TX")
 
+NV_ratio <- NV_ratio %>% arrange(year) %>% mutate (STATE = "NV")
+
 graph_all <- CA_ratio
 graph_all <- dplyr::bind_rows(graph_all, TX_ratio)
+graph_all <- dplyr::bind_rows(graph_all, NV_ratio)
 
 #once again we melt in order to view multiple variables on one plot
 CA_graph <- melt(CA_ratio, id.vars = "year")
